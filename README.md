@@ -36,6 +36,7 @@ ni autorización de requests.
 - Logging: [zap](https://github.com/uber-go/zap)
 - Arbitrary-precision fixed-point decimal numbers: [decimal](https://github.com/shopspring/decimal)
 - Tests automáticos y mocks: [testify](https://github.com/stretchr/testify)
+- Generación de código de mocks: [mockery](https://github.com/vektra/mockery)
 - HTTP Benchmarking tool: [h2load](https://nghttp2.org/documentation/h2load-howto.html)
 - [Docker](https://docs.docker.com/) y [Docker compose](https://docs.docker.com/compose/)
 
