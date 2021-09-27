@@ -5,6 +5,7 @@ import (
 
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/matbarofex/mtz-crypto/pkg/store"
+	"github.com/shopspring/decimal"
 )
 
 type WalletService interface {
@@ -33,21 +34,27 @@ func (s *walletService) GetWalletValue(req model.GetWalletValueRequest) (rs mode
 
 	var datetime time.Time
 
-	value := 0.0
+	valueIsNull := true
+	value := decimal.Zero
+
 	for _, item := range wallet.Items {
 		md, err := s.mdService.GetMD(item.Symbol)
 		if err != nil {
 			return rs, err
 		}
 
-		value += md.LastPrice * item.Quantity
+		valueIsNull = false
+		value = value.Add(md.LastPrice.Mul(item.Quantity))
+
 		if md.LastPriceDateTime.After(datetime) {
 			datetime = md.LastPriceDateTime
 		}
 	}
 
-	rs.Value = &value
-	rs.DateTime = &datetime
+	if !valueIsNull {
+		rs.Value = decimal.NullDecimal{Valid: true, Decimal: value}
+		rs.DateTime = &datetime
+	}
 
 	return rs, err
 }

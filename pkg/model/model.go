@@ -1,10 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type MarketData struct {
 	Symbol            string
-	LastPrice         float64
+	LastPrice         decimal.Decimal
 	LastPriceDateTime time.Time
 }
 
@@ -15,7 +19,7 @@ type Wallet struct {
 
 type WalletItem struct {
 	Symbol   string
-	Quantity float64
+	Quantity decimal.Decimal
 }
 
 type GetWalletValueRequest struct {
@@ -24,6 +28,6 @@ type GetWalletValueRequest struct {
 
 type GetWalletValueResponse struct {
 	ID       string
-	Value    *float64
+	Value    decimal.NullDecimal
 	DateTime *time.Time
 }
