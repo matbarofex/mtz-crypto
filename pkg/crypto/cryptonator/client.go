@@ -19,6 +19,7 @@ type cryptonatorClient struct {
 	httpClient  *http.Client
 	symbolPairs []cryptonatorSymbolPair
 	baseURL     string
+	mdChannel   model.MdChannel
 }
 
 type cryptonatorSymbolPair struct {
@@ -42,6 +43,7 @@ type cryptonatorResponse struct {
 func NewCryptonatorClient(
 	config *config.Config,
 	httpClient *http.Client,
+	mdChannel model.MdChannel,
 ) crypto.Client {
 	baseURL := config.GetString("crypto.api.cryptonator.url")
 	symbolPairsStringSlice := config.GetStringSlice("crypto.api.cryptonator.pairs")
@@ -60,6 +62,7 @@ func NewCryptonatorClient(
 		httpClient:  httpClient,
 		baseURL:     baseURL,
 		symbolPairs: symbolPairs,
+		mdChannel:   mdChannel,
 	}
 }
 
@@ -79,8 +82,7 @@ func (c *cryptonatorClient) updateMarketData() {
 			fmt.Println("Error", err)
 		}
 
-		// TODO actualizar MD (enviar a channel)
-		fmt.Println("MD", md)
+		c.mdChannel <- md
 	}
 }
 

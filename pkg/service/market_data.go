@@ -9,7 +9,7 @@ import (
 
 type MarketDataService interface {
 	GetMD(symbol string) (md model.MarketData, err error)
-	// TODO update MD
+	ConsumeMD(mdChannel model.MdChannel)
 }
 
 type marketDataService struct {
@@ -28,4 +28,15 @@ func (s *marketDataService) GetMD(symbol string) (md model.MarketData, err error
 	}
 
 	return s.mdStore.GetMD(symbol)
+}
+
+func (s *marketDataService) ConsumeMD(mdChannel model.MdChannel) {
+	go func() {
+		for md := range mdChannel {
+			if err := s.mdStore.SetOrUpdateMD(md); err != nil {
+				// TODO log de error
+				fmt.Println("Error", err)
+			}
+		}
+	}()
 }

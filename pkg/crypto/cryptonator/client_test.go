@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (c *cryptonatorClient) TestRetrieveMD(externalSymbol, symbol string) (md model.MarketData, err error) {
-	return c.retrieveMD(externalSymbol, symbol)
+func (c *cryptonatorClient) TestUpdateMarketData() {
+	c.updateMarketData()
 }
 
 func TestUpdateMarketData(t *testing.T) {
@@ -39,12 +39,14 @@ func TestUpdateMarketData(t *testing.T) {
 	defer server.Close()
 
 	t.Setenv("MTZ_CRYPTO_API_CRYPTONATOR_URL", server.URL)
+	t.Setenv("MTZ_CRYPTO_API_CRYPTONATOR_PAIRS", "externalSymbol1;SYMBOL1")
 
 	cfg := config.NewConfig(&flag.FlagSet{})
-	client := NewCryptonatorClient(cfg, server.Client())
-	md, err := client.(*cryptonatorClient).TestRetrieveMD("externalSymbol1", "SYMBOL1")
+	mdChannel := make(chan model.MarketData)
+	client := NewCryptonatorClient(cfg, server.Client(), mdChannel)
+	go client.(*cryptonatorClient).updateMarketData()
 
-	assert.NoError(t, err)
+	md := <-mdChannel
 	assert.Equal(t, "SYMBOL1", md.Symbol)
 	assert.Equal(t, decimal.RequireFromString("123.456"), md.LastPrice)
 	assert.Equal(t, int64(1_628_610_304), md.LastPriceDateTime.Unix())

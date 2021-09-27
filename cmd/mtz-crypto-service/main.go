@@ -10,7 +10,10 @@ import (
 
 	"github.com/matbarofex/mtz-crypto/pkg/config"
 	"github.com/matbarofex/mtz-crypto/pkg/crypto/cryptonator"
+	"github.com/matbarofex/mtz-crypto/pkg/model"
+	"github.com/matbarofex/mtz-crypto/pkg/service"
 	"github.com/matbarofex/mtz-crypto/pkg/store/db"
+	"github.com/matbarofex/mtz-crypto/pkg/store/memory"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -25,20 +28,31 @@ func main() {
 
 	// Stores
 	walletStore := db.NewWalletStore(gormDB)
+	marketDataStore := memory.NewMarketDataStore()
 
-	// TODO - eliminar
-	fmt.Println("-----------------------------------------")
-	wallet1, err := walletStore.GetWallet("wallet1")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Wallet 1: %+v\n", wallet1)
-	fmt.Println("-----------------------------------------")
+	// Market Data channel
+	mdChannel := make(model.MdChannel)
+
+	// Services
+	marketDataService := service.NewMarketDataService(marketDataStore)
+	walletService := service.NewWalletService(walletStore, marketDataService)
+
+	// Start MD consumption
+	marketDataService.ConsumeMD(mdChannel)
 
 	// Cliente API externa
 	httpClient := &http.Client{}
-	cryptoClient := cryptonator.NewCryptonatorClient(cfg, httpClient)
+	cryptoClient := cryptonator.NewCryptonatorClient(cfg, httpClient, mdChannel)
 	cryptoClient.Start()
+
+	// TODO - eliminar
+	fmt.Println("-----------------------------------------")
+	resp, err := walletService.GetWalletValue(model.GetWalletValueRequest{ID: "wallet1"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Wallet 1 value: %+v\n", resp)
+	fmt.Println("-----------------------------------------")
 }
 
 // createGomDB configuración de acceso a datos y GORM

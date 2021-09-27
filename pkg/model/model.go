@@ -31,3 +31,5 @@ type GetWalletValueResponse struct {
 	Value    decimal.NullDecimal
 	DateTime *time.Time
 }
+
+type MdChannel chan MarketData
