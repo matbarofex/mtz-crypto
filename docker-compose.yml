@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - ./scripts/postgres-dev:/docker-entrypoint-initdb.d:ro
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: crypto_db_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
