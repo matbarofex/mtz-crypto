@@ -5,14 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/matbarofex/mtz-crypto/pkg/config"
 	"github.com/matbarofex/mtz-crypto/pkg/crypto"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/shopspring/decimal"
 )
 
 type cryptonatorClient struct {
+	config      *config.Config
 	httpClient  *http.Client
 	symbolPairs []cryptonatorSymbolPair
 	baseURL     string
@@ -37,16 +40,23 @@ type cryptonatorResponse struct {
 }
 
 func NewCryptonatorClient(
-	baseURL string,
+	config *config.Config,
 	httpClient *http.Client,
 ) crypto.Client {
-	// TODO externalizar configs
-	symbolPairs := []cryptonatorSymbolPair{
-		{Symbol: "BTCUSD", ExternalSymbol: "btc-usd"},
-		// TODO resto de los activos
+	baseURL := config.GetString("crypto.api.cryptonator.url")
+	symbolPairsStringSlice := config.GetStringSlice("crypto.api.cryptonator.pairs")
+
+	symbolPairs := []cryptonatorSymbolPair{}
+	for _, pairStr := range symbolPairsStringSlice {
+		pairs := strings.Split(pairStr, ";")
+		symbolPairs = append(symbolPairs, cryptonatorSymbolPair{
+			ExternalSymbol: pairs[0],
+			Symbol:         pairs[1],
+		})
 	}
 
 	return &cryptonatorClient{
+		config:      config,
 		httpClient:  httpClient,
 		baseURL:     baseURL,
 		symbolPairs: symbolPairs,
@@ -66,7 +76,7 @@ func (c *cryptonatorClient) updateMarketData() {
 	for _, pair := range c.symbolPairs {
 		md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
 		if err != nil {
-			// TODO log
+			fmt.Println("Error", err)
 		}
 
 		// TODO actualizar MD (enviar a channel)
