@@ -1,10 +1,12 @@
 package cryptonator
 
 import (
+	"flag"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/matbarofex/mtz-crypto/pkg/config"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +38,10 @@ func TestUpdateMarketData(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewCryptonatorClient(server.URL, server.Client())
+	t.Setenv("MTZ_CRYPTO_API_CRYPTONATOR_URL", server.URL)
+
+	cfg := config.NewConfig(&flag.FlagSet{})
+	client := NewCryptonatorClient(cfg, server.Client())
 	md, err := client.(*cryptonatorClient).TestRetrieveMD("externalSymbol1", "SYMBOL1")
 
 	assert.NoError(t, err)

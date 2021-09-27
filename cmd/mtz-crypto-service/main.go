@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+
+	"github.com/matbarofex/mtz-crypto/pkg/config"
+	"github.com/matbarofex/mtz-crypto/pkg/crypto/cryptonator"
+)
 
 func main() {
-	fmt.Println("Hola, Mundo!")
+	cfg := config.NewConfig(fs)
+
+	httpClient := &http.Client{}
+	cryptoClient := cryptonator.NewCryptonatorClient(cfg, httpClient)
+	cryptoClient.Start()
 }
