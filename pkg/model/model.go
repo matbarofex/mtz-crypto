@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -27,9 +28,15 @@ type GetWalletValueRequest struct {
 }
 
 type GetWalletValueResponse struct {
-	ID       string
-	Value    decimal.NullDecimal
-	DateTime *time.Time
+	ID       string              `json:"walletId"`
+	Value    decimal.NullDecimal `json:"value"`
+	DateTime *time.Time          `json:"dateTime,omitempty"`
 }
 
 type MdChannel chan MarketData
+
+var (
+	// TODO agregar el resto de los errores
+	ErrWalletIsRequired = errors.New("wallet is required")
+	ErrUnexpected       = errors.New("unexpected error")
+)
