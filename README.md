@@ -14,19 +14,57 @@ interno. Es decir, no expuesta directamente a usuarios finales sino
 a través de otro sistema o un API gateway: no realiza autenticación
 ni autorización de requests.
 
-## Arquitectura
+## Ejecución
+
+### Build local + DB usando docker-compose
+
+Iniciar DB 
+
+```
+docker-compose up db
+```
+
+si hubiera que reiniciarla desde 0, ejecutar previamente `docker-compose down`.
+
+Build de la app:
+
+```
+go build ./cmd/...
+```
+
+Ejecutar:
+
+```
+./mtz-crypto-service
+```
+
+Luego, acceder a http://localhost:8000/wallet/value?wallet=wallet1
+
+TODO: Agregar `Makefile` (clase 5)
+
+## Ejecución de tests
+
+```
+go test -v ./pkg/...
+```
+
+TODO: Agregar `Makefile` (clase 5)
+
+## Documentación
+
+### Arquitectura
 
 ![mtz_crypto_architecture.svg](docs/mtz_crypto_architecture.svg)
 
-## Flujo de datos
+### Flujo de datos
 
 ![mtz_crypto_data.svg](docs/mtz_crypto_data.svg)
 
-## Diseño
+### Diseño
 
 ![mtz_crypto_design.png](docs/mtz_crypto_design.png)
 
-## Tecnología empleada / librerías
+### Tecnología empleada / librerías
 
 - HTTP Server: [gin](https://github.com/gin-gonic/gin)
 - Cache en memoria: [go-cache](https://github.com/patrickmn/go-cache)
@@ -50,3 +88,9 @@ ni autorización de requests.
 - [Documentación de Go](https://golang.org/doc/)
 - [pkg.go.dev](https://pkg.go.dev/)
 - [Gitlab CI config](https://docs.gitlab.com/ce/ci/quick_start/)
+
+## Código fuente de las clases
+
+- Clase 1: [commit inicial](https://github.com/matbarofex/mtz-crypto/commit/2dc8b070190a97135e1bf2c66a6d3c98ca877087)
+- Clases 2 y posteriores: https://github.com/matbarofex/mtz-crypto/pulls?q=is%3Apr+is%3Aclosed+label%3Aclases
+
