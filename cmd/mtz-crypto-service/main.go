@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/matbarofex/mtz-crypto/pkg/config"
+	"github.com/matbarofex/mtz-crypto/pkg/controller"
 	"github.com/matbarofex/mtz-crypto/pkg/crypto/cryptonator"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/matbarofex/mtz-crypto/pkg/service"
@@ -21,6 +26,14 @@ import (
 
 func main() {
 	cfg := config.NewConfig(fs)
+
+	// Gin mode
+	if !cfg.GetBool("crypto.debug.mode") {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Start Gin Engine
+	r := gin.New()
 
 	// Conexión a DB
 	gormDB := createGomDB(cfg)
@@ -43,16 +56,52 @@ func main() {
 	// Cliente API externa
 	httpClient := &http.Client{}
 	cryptoClient := cryptonator.NewCryptonatorClient(cfg, httpClient, mdChannel)
-	cryptoClient.Start()
+	go cryptoClient.Start()
 
-	// TODO - eliminar
-	fmt.Println("-----------------------------------------")
-	resp, err := walletService.GetWalletValue(model.GetWalletValueRequest{ID: "wallet1"})
-	if err != nil {
+	// Controllers
+	walletController := controller.NewWalletController(walletService)
+
+	// Controller routes
+	r.GET("/wallet/value", walletController.GetWalletValue)
+
+	// Health check handler
+	r.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "")
+	})
+
+	// Load server configuration
+	addr := cfg.GetString("crypto.http.addr")
+
+	// HTTP Server
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	// Start server
+	go func() {
+		// TODO log
+		fmt.Println("starting HTTP server", addr)
+
+		// TODO tratamiento del error
+		_ = srv.ListenAndServe()
+	}()
+
+	// Wait for signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// TODO log de la señal
+	<-quit
+
+	// Shutdown
+	timeout := cfg.GetDuration("crypto.http.shutdown.timeout")
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		// TODO log de error
 		panic(err)
 	}
-	fmt.Printf("Wallet 1 value: %+v\n", resp)
-	fmt.Println("-----------------------------------------")
 }
 
 // createGomDB configuración de acceso a datos y GORM

@@ -2,11 +2,19 @@ package main
 
 import (
 	"flag"
+	"time"
 
 	"github.com/spf13/pflag"
 )
 
 var fs = flag.NewFlagSet("crypto", flag.ExitOnError)
+
+// Configs generales
+var (
+	_ = fs.Bool("crypto.debug.mode", false, "Activar modo debug")
+	_ = fs.String("crypto.http.addr", ":8000", "Puerto HTTP del servicio")
+	_ = fs.Duration("crypto.http.shutdown.timeout", 15*time.Second, "HTTP server graceful shutdown timeout")
+)
 
 // Cryptonator (API externa)
 var (
