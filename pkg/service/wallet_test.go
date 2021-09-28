@@ -53,6 +53,7 @@ func TestGetWalletValue(t *testing.T) {
 	resp, err := walletService.GetWalletValue(req)
 
 	assert.NoError(t, err)
+	assert.Equal(t, "wallet1", resp.ID)
 	assert.Equal(t, "0.3", resp.Value.Decimal.String())
 	assert.Equal(t, ts3, *resp.DateTime)
 }
