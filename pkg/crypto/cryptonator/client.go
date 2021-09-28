@@ -73,8 +73,7 @@ func (c *cryptonatorClient) Start() {
 	// TODO Actualización periódica de la market data
 }
 
-// updateMarketData Actualiza la Market Data de todos los activos, obteniéndolos
-// del servicio externo
+// updateMarketData Obtiene la MD de todos los activos y la publica en el channel
 func (c *cryptonatorClient) updateMarketData() {
 	for _, pair := range c.symbolPairs {
 		md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
@@ -86,8 +85,7 @@ func (c *cryptonatorClient) updateMarketData() {
 	}
 }
 
-// retrieveAndUpdateMD Obtiene la Market data de 1 activo y la actualiza
-// localmente, invocando al marketDataService
+// retrieveMD Obtiene la Market data de un activo
 func (c *cryptonatorClient) retrieveMD(externalSymbol, symbol string) (md model.MarketData, err error) {
 	httpResp, err := c.httpClient.Get(fmt.Sprintf("%s/ticker/%s", c.baseURL, externalSymbol))
 	if err != nil {
