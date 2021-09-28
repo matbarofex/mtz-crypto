@@ -12,6 +12,11 @@ type MarketDataService struct {
 	mock.Mock
 }
 
+// ConsumeMD provides a mock function with given fields: mdChannel
+func (_m *MarketDataService) ConsumeMD(mdChannel model.MdChannel) {
+	_m.Called(mdChannel)
+}
+
 // GetMD provides a mock function with given fields: symbol
 func (_m *MarketDataService) GetMD(symbol string) (model.MarketData, error) {
 	ret := _m.Called(symbol)
