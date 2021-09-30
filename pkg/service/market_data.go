@@ -33,6 +33,8 @@ func (s *marketDataService) GetMD(symbol string) (md model.MarketData, err error
 func (s *marketDataService) ConsumeMD(mdChannel model.MdChannel) {
 	go func() {
 		for md := range mdChannel {
+			fmt.Println("Nueva MD", md)
+
 			if err := s.mdStore.SetOrUpdateMD(md); err != nil {
 				// TODO log de error
 				fmt.Println("Error", err)

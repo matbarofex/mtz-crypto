@@ -70,7 +70,15 @@ func (c *cryptonatorClient) Start() {
 	// Actualización inicial
 	c.updateMarketData()
 
-	// TODO Actualización periódica de la market data
+	// Actualización periódica de la market data
+	interval := c.config.GetDuration("crypto.api.cryptonator.poll.interval")
+	ticker := time.NewTicker(interval)
+
+	go func() {
+		for range ticker.C {
+			c.updateMarketData()
+		}
+	}()
 }
 
 // updateMarketData Obtiene la MD de todos los activos y la publica en el channel
@@ -97,6 +105,8 @@ func (c *cryptonatorClient) retrieveMD(externalSymbol, symbol string) (md model.
 	}
 
 	var resp cryptonatorResponse
+
+	defer httpResp.Body.Close()
 	err = json.NewDecoder(httpResp.Body).Decode(&resp)
 	if err != nil {
 		return md, err

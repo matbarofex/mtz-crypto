@@ -19,6 +19,8 @@ var (
 // Cryptonator (API externa)
 var (
 	_ = fs.String("crypto.api.cryptonator.url", "https://api.cryptonator.com/api", "URL API de servicio cryptonator")
+	_ = fs.Duration("crypto.api.cryptonator.poll.interval", 15*time.Second, "Intervalo de consulta")
+	_ = fs.Duration("crypto.api.cryptonator.timeout", 15*time.Second, "Timeout para solicitudes a Cryptonator API")
 	_ = pflag.StringSlice("crypto.api.cryptonator.pairs", []string{
 		"btc-usd;BTCUSD",
 		"eth-usd;ETHUSD",
