@@ -27,6 +27,7 @@ var (
 		"ada-usd;ADAUSD",
 		"dot-usd;DOTUSD",
 	}, "Pares 'simbolo externo;simbolo interno'")
+	_ = fs.Int("crypto.api.cryptonator.workers", 2, "Número de workers para pedidos concurrentes a la API externa")
 )
 
 // Postgres
