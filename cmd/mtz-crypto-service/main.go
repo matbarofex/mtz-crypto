@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/matbarofex/mtz-crypto/pkg"
 	"github.com/matbarofex/mtz-crypto/pkg/config"
@@ -34,6 +35,8 @@ func main() {
 	logger := createZapLogger(cfg)
 	defer logger.Sync()
 
+	logger.Info("starting service")
+
 	// Gin mode
 	if !cfg.GetBool("crypto.debug.mode") {
 		gin.SetMode(gin.ReleaseMode)
@@ -41,6 +44,11 @@ func main() {
 
 	// Start Gin Engine
 	r := gin.New()
+
+	if cfg.GetBool("crypto.debugmode") {
+		r.Use(ginzap.Ginzap(logger, time.RFC3339Nano, true))
+	}
+	r.Use(ginzap.RecoveryWithZap(logger, true))
 
 	// Conexión a DB
 	gormDB := createGomDB(cfg)
@@ -173,8 +181,8 @@ func closeGormDBConnection(db *gorm.DB) {
 func createZapLogger(cfg *config.Config) *zap.Logger {
 	initialFields := make(map[string]interface{})
 	if cfg.GetString("crypto.logging.format") == "json" {
-		initialFields["service"] = pkg.ServiceName
-		initialFields["version"] = pkg.Version
+		initialFields["svc"] = pkg.ServiceName
+		initialFields["vsn"] = pkg.Version
 	}
 
 	level := zapcore.InfoLevel

@@ -3,6 +3,7 @@ module github.com/matbarofex/mtz-crypto
 go 1.17
 
 require (
+	github.com/gin-contrib/zap v0.0.1
 	github.com/gin-gonic/gin v1.7.4
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/pflag v1.0.5
