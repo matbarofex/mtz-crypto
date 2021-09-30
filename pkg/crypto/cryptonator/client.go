@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/matbarofex/mtz-crypto/pkg/config"
@@ -83,14 +84,23 @@ func (c *cryptonatorClient) Start() {
 
 // updateMarketData Obtiene la MD de todos los activos y la publica en el channel
 func (c *cryptonatorClient) updateMarketData() {
-	for _, pair := range c.symbolPairs {
-		md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
-		if err != nil {
-			fmt.Println("Error", err)
-		}
+	wg := sync.WaitGroup{}
+	wg.Add(len(c.symbolPairs))
 
-		c.mdChannel <- md
+	for _, p := range c.symbolPairs {
+		go func(pair cryptonatorSymbolPair) {
+			fmt.Printf("Obteniendo MD para %s\n", pair.Symbol)
+			md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
+			if err != nil {
+				fmt.Println("Error", err)
+			}
+
+			c.mdChannel <- md
+			wg.Done()
+		}(p)
 	}
+
+	wg.Wait()
 }
 
 // retrieveMD Obtiene la Market data de un activo
