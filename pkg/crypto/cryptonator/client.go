@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/matbarofex/mtz-crypto/pkg/config"
@@ -70,19 +71,67 @@ func (c *cryptonatorClient) Start() {
 	// Actualización inicial
 	c.updateMarketData()
 
-	// TODO Actualización periódica de la market data
+	// Actualización periódica de la market data
+	interval := c.config.GetDuration("crypto.api.cryptonator.poll.interval")
+	ticker := time.NewTicker(interval)
+	workers := c.config.GetInt("crypto.api.cryptonator.workers")
+
+	go func() {
+		for range ticker.C {
+			c.updateMarketDataWithWorkers(workers)
+		}
+	}()
 }
 
 // updateMarketData Obtiene la MD de todos los activos y la publica en el channel
 func (c *cryptonatorClient) updateMarketData() {
-	for _, pair := range c.symbolPairs {
-		md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
-		if err != nil {
-			fmt.Println("Error", err)
-		}
+	wg := sync.WaitGroup{}
+	wg.Add(len(c.symbolPairs))
 
-		c.mdChannel <- md
+	for _, p := range c.symbolPairs {
+		go func(pair cryptonatorSymbolPair) {
+			fmt.Printf("Obteniendo MD para %s\n", pair.Symbol)
+			md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
+			if err != nil {
+				fmt.Println("Error", err)
+			}
+
+			c.mdChannel <- md
+			wg.Done()
+		}(p)
 	}
+
+	wg.Wait()
+}
+
+// updateMarketDataWithWorkers Obtiene la MD limitando la concurrencia a una cantidad de workers
+func (c *cryptonatorClient) updateMarketDataWithWorkers(workers int) {
+	ch := make(chan cryptonatorSymbolPair)
+	wg := sync.WaitGroup{}
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func(workerID int) {
+			for pair := range ch {
+				fmt.Printf("[worker %d] Obteniendo MD para %s\n", workerID, pair.Symbol)
+				md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
+				if err != nil {
+					fmt.Println("Error", err)
+				}
+
+				fmt.Printf("[worker %d] MD obtenida para %s - Enviando a MarketDataService: %+v\n", workerID, pair.Symbol, md)
+				c.mdChannel <- md
+			}
+
+			wg.Done()
+		}(i)
+	}
+
+	for _, p := range c.symbolPairs {
+		ch <- p
+	}
+
+	close(ch)
+	wg.Wait()
 }
 
 // retrieveMD Obtiene la Market data de un activo
@@ -97,6 +146,8 @@ func (c *cryptonatorClient) retrieveMD(externalSymbol, symbol string) (md model.
 	}
 
 	var resp cryptonatorResponse
+
+	defer httpResp.Body.Close()
 	err = json.NewDecoder(httpResp.Body).Decode(&resp)
 	if err != nil {
 		return md, err

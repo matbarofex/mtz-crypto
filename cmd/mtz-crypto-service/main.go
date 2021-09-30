@@ -54,8 +54,8 @@ func main() {
 	marketDataService.ConsumeMD(mdChannel)
 
 	// Cliente API externa
-	httpClient := &http.Client{}
-	cryptoClient := cryptonator.NewCryptonatorClient(cfg, httpClient, mdChannel)
+	cryptonatorHTTPClient := &http.Client{Timeout: cfg.GetDuration("crypto.api.cryptonator.timeout")}
+	cryptoClient := cryptonator.NewCryptonatorClient(cfg, cryptonatorHTTPClient, mdChannel)
 	go cryptoClient.Start()
 
 	// Controllers
