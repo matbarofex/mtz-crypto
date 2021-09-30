@@ -9,6 +9,7 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/store/memory"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestGetWalletValue(t *testing.T) {
@@ -22,8 +23,9 @@ func TestGetWalletValue(t *testing.T) {
 		Items: items,
 	}
 
+	logger := zap.NewNop()
 	mdStore := memory.NewMarketDataStore()
-	mdService := NewMarketDataService(mdStore)
+	mdService := NewMarketDataService(logger, mdStore)
 
 	ts1, _ := time.Parse(time.RFC3339, "2021-09-23T12:34:56Z")
 	mdStore.SetOrUpdateMD(model.MarketData{

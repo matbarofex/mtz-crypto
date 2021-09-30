@@ -11,6 +11,7 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestWalletControllerOK(t *testing.T) {
@@ -25,7 +26,8 @@ func TestWalletControllerOK(t *testing.T) {
 	walletServiceMock := new(mocks.WalletService)
 	walletServiceMock.On("GetWalletValue", svcReq).Return(svcResp, nil)
 
-	walletController := NewWalletController(walletServiceMock)
+	logger := zap.NewNop()
+	walletController := NewWalletController(logger, walletServiceMock)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
@@ -41,8 +43,9 @@ func TestWalletControllerOK(t *testing.T) {
 }
 
 func TestWalletControllerWithoutWallet(t *testing.T) {
+	logger := zap.NewNop()
 	walletServiceMock := new(mocks.WalletService)
-	walletController := NewWalletController(walletServiceMock)
+	walletController := NewWalletController(logger, walletServiceMock)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
@@ -62,7 +65,8 @@ func TestWalletControllerWithoutValue(t *testing.T) {
 	svcResp := model.GetWalletValueResponse{ID: "wallet1", Value: decimal.NullDecimal{Valid: false}}
 	walletServiceMock.On("GetWalletValue", svcReq).Return(svcResp, nil)
 
-	walletController := NewWalletController(walletServiceMock)
+	logger := zap.NewNop()
+	walletController := NewWalletController(logger, walletServiceMock)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()

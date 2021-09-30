@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/matbarofex/mtz-crypto/pkg/service"
+	"go.uber.org/zap"
 )
 
 type WalletController interface {
@@ -14,11 +14,16 @@ type WalletController interface {
 }
 
 type walletController struct {
+	logger        *zap.Logger
 	walletService service.WalletService
 }
 
-func NewWalletController(walletService service.WalletService) WalletController {
+func NewWalletController(
+	logger *zap.Logger,
+	walletService service.WalletService,
+) WalletController {
 	return &walletController{
+		logger:        logger,
 		walletService: walletService,
 	}
 }
@@ -39,8 +44,11 @@ func (c *walletController) GetWalletValue(ctx *gin.Context) {
 
 	resp, err := c.walletService.GetWalletValue(req)
 	if err != nil {
-		// TODO log de error
-		fmt.Printf("error retrieving wallet value: %s\n", err)
+		c.logger.Error(
+			"error retrieving wallet value",
+			zap.String("walletID", walletID),
+			zap.Error(err),
+		)
 
 		ctx.AbortWithStatusJSON(
 			http.StatusInternalServerError,

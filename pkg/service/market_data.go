@@ -5,6 +5,7 @@ import (
 
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/matbarofex/mtz-crypto/pkg/store"
+	"go.uber.org/zap"
 )
 
 type MarketDataService interface {
@@ -13,11 +14,16 @@ type MarketDataService interface {
 }
 
 type marketDataService struct {
+	logger  *zap.Logger
 	mdStore store.MarketDataStore
 }
 
-func NewMarketDataService(mdStore store.MarketDataStore) MarketDataService {
+func NewMarketDataService(
+	logger *zap.Logger,
+	mdStore store.MarketDataStore,
+) MarketDataService {
 	return &marketDataService{
+		logger:  logger,
 		mdStore: mdStore,
 	}
 }
@@ -33,11 +39,10 @@ func (s *marketDataService) GetMD(symbol string) (md model.MarketData, err error
 func (s *marketDataService) ConsumeMD(mdChannel model.MdChannel) {
 	go func() {
 		for md := range mdChannel {
-			fmt.Println("Nueva MD", md)
+			s.logger.Debug("new MD received", zap.Any("md", md))
 
 			if err := s.mdStore.SetOrUpdateMD(md); err != nil {
-				// TODO log de error
-				fmt.Println("Error", err)
+				s.logger.Error("error updating MD", zap.Any("md", md), zap.Error(err))
 			}
 		}
 	}()
