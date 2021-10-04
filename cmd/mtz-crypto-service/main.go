@@ -19,8 +19,11 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/crypto/cryptonator"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/matbarofex/mtz-crypto/pkg/service"
+	"github.com/matbarofex/mtz-crypto/pkg/store"
+	cacheStore "github.com/matbarofex/mtz-crypto/pkg/store/cache"
 	"github.com/matbarofex/mtz-crypto/pkg/store/db"
 	"github.com/matbarofex/mtz-crypto/pkg/store/memory"
+	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/postgres"
@@ -54,9 +57,22 @@ func main() {
 	gormDB := createGomDB(cfg)
 	defer closeGormDBConnection(gormDB)
 
+	// Cache de billeteras
+	defaultExpiration := cfg.GetDuration("crypto.cache.default.expiration")
+	cleanupInterval := cfg.GetDuration("crypto.cache.cleanup.interval")
+	walletCache := cache.New(defaultExpiration, cleanupInterval)
+
 	// Stores
-	walletStore := db.NewWalletStore(gormDB)
+	var walletStore store.WalletStore
 	marketDataStore := memory.NewMarketDataStore()
+	walletStore = db.NewWalletStore(gormDB)
+
+	if cfg.GetBool("crypto.cache.enabled") {
+		logger.Info("wallet cache is enabled")
+		walletStore = cacheStore.NewWalletCacheStore(walletCache, walletStore)
+	} else {
+		logger.Info("wallet cache is disabled")
+	}
 
 	// Market Data channel
 	mdChannel := make(model.MdChannel)
