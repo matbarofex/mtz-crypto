@@ -37,7 +37,7 @@ func main() {
 
 	// Zap Logger
 	logger := createZapLogger(cfg)
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	logger.Info("starting service")
 
