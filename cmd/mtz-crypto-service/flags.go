@@ -31,6 +31,13 @@ var (
 	_ = fs.Int("crypto.api.cryptonator.workers", 2, "Número de workers para pedidos concurrentes a la API externa")
 )
 
+// Cache
+var (
+	_ = fs.Bool("crypto.cache.enabled", true, "Habilitar cache en memoria")
+	_ = fs.Duration("crypto.cache.default.expiration", 5*time.Minute, "Tiempo de vida por defecto de keys en cache")
+	_ = fs.Duration("crypto.cache.cleanup.interval", 10*time.Minute, "Intervalo de limpieza de keys expiradas")
+)
+
 // Postgres
 var (
 	_ = fs.String("crypto.postgres.host", "localhost", "Host de la base de Postgres")
