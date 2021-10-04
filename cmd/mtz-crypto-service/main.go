@@ -37,7 +37,7 @@ func main() {
 
 	// Zap Logger
 	logger := createZapLogger(cfg)
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	logger.Info("starting service")
 
@@ -63,7 +63,7 @@ func main() {
 	r.Use(ginzap.RecoveryWithZap(logger, true))
 
 	// Conexión a DB
-	gormDB := createGomDB(cfg)
+	gormDB := createGormDB(cfg)
 	defer closeGormDBConnection(gormDB)
 
 	// Cache de billeteras
@@ -146,8 +146,8 @@ func main() {
 	}
 }
 
-// createGomDB configuración de acceso a datos y GORM
-func createGomDB(cfg *config.Config) *gorm.DB {
+// createGormDB configuración de acceso a datos y GORM
+func createGormDB(cfg *config.Config) *gorm.DB {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s %s",
 		cfg.GetString("crypto.postgres.host"),
 		cfg.GetInt("crypto.postgres.port"),

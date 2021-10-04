@@ -28,19 +28,19 @@ func TestGetWalletValue(t *testing.T) {
 	mdService := NewMarketDataService(logger, mdStore)
 
 	ts1, _ := time.Parse(time.RFC3339, "2021-09-23T12:34:56Z")
-	mdStore.SetOrUpdateMD(model.MarketData{
+	_ = mdStore.SetOrUpdateMD(model.MarketData{
 		Symbol:            "SYM1",
 		LastPrice:         decimal.RequireFromString("1.0"),
 		LastPriceDateTime: ts1,
 	})
 	ts2, _ := time.Parse(time.RFC3339, "2021-09-23T13:34:56Z")
-	mdStore.SetOrUpdateMD(model.MarketData{
+	_ = mdStore.SetOrUpdateMD(model.MarketData{
 		Symbol:            "SYM2",
 		LastPrice:         decimal.RequireFromString("1.0"),
 		LastPriceDateTime: ts2,
 	})
 	ts3, _ := time.Parse(time.RFC3339, "2021-09-23T14:34:56Z")
-	mdStore.SetOrUpdateMD(model.MarketData{
+	_ = mdStore.SetOrUpdateMD(model.MarketData{
 		Symbol:            "SYM3",
 		LastPrice:         decimal.RequireFromString("1.0"),
 		LastPriceDateTime: ts3,
