@@ -29,7 +29,7 @@ si hubiera que reiniciarla desde 0, ejecutar previamente `docker-compose down`.
 Build de la app:
 
 ```
-go build ./cmd/...
+make build
 ```
 
 Ejecutar:
@@ -40,15 +40,12 @@ Ejecutar:
 
 Luego, acceder a http://localhost:8000/wallet/value?wallet=wallet1
 
-TODO: Agregar `Makefile` (clase 5)
 
 ## Ejecución de tests
 
 ```
-go test -v ./pkg/...
+make test
 ```
-
-TODO: Agregar `Makefile` (clase 5)
 
 ## Documentación
 
@@ -76,6 +73,7 @@ TODO: Agregar `Makefile` (clase 5)
 - Tests automáticos y mocks: [testify](https://github.com/stretchr/testify)
 - Generación de código de mocks: [mockery](https://github.com/vektra/mockery)
 - HTTP Benchmarking tool: [h2load](https://nghttp2.org/documentation/h2load-howto.html)
+- Linting: [`golangci-lint`](https://github.com/golangci/golangci-lint)
 - [Docker](https://docs.docker.com/) y [Docker compose](https://docs.docker.com/compose/)
 
 ## Links útiles
@@ -93,4 +91,3 @@ TODO: Agregar `Makefile` (clase 5)
 
 - Clase 1: [commit inicial](https://github.com/matbarofex/mtz-crypto/commit/2dc8b070190a97135e1bf2c66a6d3c98ca877087)
 - Clases 2 y posteriores: https://github.com/matbarofex/mtz-crypto/pulls?q=is%3Apr+is%3Aclosed+label%3Aclases
-
