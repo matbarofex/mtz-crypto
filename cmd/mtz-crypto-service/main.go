@@ -45,7 +45,7 @@ func main() {
 	// Start Gin Engine
 	r := gin.New()
 
-	if cfg.GetBool("crypto.debugmode") {
+	if cfg.GetBool("crypto.debug.mode") {
 		r.Use(ginzap.Ginzap(logger, time.RFC3339Nano, true))
 	}
 	r.Use(ginzap.RecoveryWithZap(logger, true))
