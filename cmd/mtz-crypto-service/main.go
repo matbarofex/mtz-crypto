@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/matbarofex/mtz-crypto/pkg"
 	"github.com/matbarofex/mtz-crypto/pkg/config"
 	"github.com/matbarofex/mtz-crypto/pkg/controller"
 	"github.com/matbarofex/mtz-crypto/pkg/crypto/cryptonator"
@@ -19,6 +21,8 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/service"
 	"github.com/matbarofex/mtz-crypto/pkg/store/db"
 	"github.com/matbarofex/mtz-crypto/pkg/store/memory"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -27,6 +31,12 @@ import (
 func main() {
 	cfg := config.NewConfig(fs)
 
+	// Zap Logger
+	logger := createZapLogger(cfg)
+	defer logger.Sync()
+
+	logger.Info("starting service")
+
 	// Gin mode
 	if !cfg.GetBool("crypto.debug.mode") {
 		gin.SetMode(gin.ReleaseMode)
@@ -34,6 +44,11 @@ func main() {
 
 	// Start Gin Engine
 	r := gin.New()
+
+	if cfg.GetBool("crypto.debug.mode") {
+		r.Use(ginzap.Ginzap(logger, time.RFC3339Nano, true))
+	}
+	r.Use(ginzap.RecoveryWithZap(logger, true))
 
 	// Conexión a DB
 	gormDB := createGomDB(cfg)
@@ -47,7 +62,7 @@ func main() {
 	mdChannel := make(model.MdChannel)
 
 	// Services
-	marketDataService := service.NewMarketDataService(marketDataStore)
+	marketDataService := service.NewMarketDataService(logger, marketDataStore)
 	walletService := service.NewWalletService(walletStore, marketDataService)
 
 	// Start MD consumption
@@ -55,11 +70,11 @@ func main() {
 
 	// Cliente API externa
 	cryptonatorHTTPClient := &http.Client{Timeout: cfg.GetDuration("crypto.api.cryptonator.timeout")}
-	cryptoClient := cryptonator.NewCryptonatorClient(cfg, cryptonatorHTTPClient, mdChannel)
+	cryptoClient := cryptonator.NewCryptonatorClient(cfg, logger, cryptonatorHTTPClient, mdChannel)
 	go cryptoClient.Start()
 
 	// Controllers
-	walletController := controller.NewWalletController(walletService)
+	walletController := controller.NewWalletController(logger, walletService)
 
 	// Controller routes
 	r.GET("/wallet/value", walletController.GetWalletValue)
@@ -80,18 +95,21 @@ func main() {
 
 	// Start server
 	go func() {
-		// TODO log
-		fmt.Println("starting HTTP server", addr)
+		logger.Info("starting HTTP server", zap.String("addr", addr))
 
-		// TODO tratamiento del error
-		_ = srv.ListenAndServe()
+		err := srv.ListenAndServe()
+		if err == http.ErrServerClosed {
+			logger.Info("shutting down server", zap.Error(err))
+		} else {
+			logger.Fatal("shutting down server", zap.Error(err))
+		}
 	}()
 
 	// Wait for signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	// TODO log de la señal
-	<-quit
+	s := <-quit
+	logger.Info("signal received", zap.Any("signal", s))
 
 	// Shutdown
 	timeout := cfg.GetDuration("crypto.http.shutdown.timeout")
@@ -99,8 +117,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		// TODO log de error
-		panic(err)
+		logger.Fatal("fatal error", zap.Error(err))
 	}
 }
 
@@ -158,4 +175,40 @@ func closeGormDBConnection(db *gorm.DB) {
 	if err == nil {
 		dbLocal.Close() //CloseDB
 	}
+}
+
+// createZapLogger inicializa logger de la app
+func createZapLogger(cfg *config.Config) *zap.Logger {
+	initialFields := make(map[string]interface{})
+	if cfg.GetString("crypto.logging.format") == "json" {
+		initialFields["svc"] = pkg.ServiceName
+		initialFields["vsn"] = pkg.Version
+	}
+
+	level := zapcore.InfoLevel
+	if cfg.GetBool("crypto.debug.mode") {
+		level = zapcore.DebugLevel
+	}
+
+	configLogger := zap.Config{
+		Encoding:         cfg.GetString("crypto.logging.format"),
+		Level:            zap.NewAtomicLevelAt(level),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey:  "message",
+			LevelKey:    "level",
+			EncodeLevel: zapcore.CapitalLevelEncoder,
+			TimeKey:     "timestamp",
+			EncodeTime:  zapcore.RFC3339NanoTimeEncoder,
+		},
+		InitialFields: initialFields,
+	}
+
+	logger, err := configLogger.Build()
+	if err != nil {
+		log.Fatalf("error building zap logger: %s", err.Error())
+	}
+
+	return logger
 }

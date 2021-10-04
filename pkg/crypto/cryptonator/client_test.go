@@ -10,6 +10,7 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func (c *cryptonatorClient) TestUpdateMarketData() {
@@ -42,8 +43,9 @@ func TestUpdateMarketData(t *testing.T) {
 	t.Setenv("MTZ_CRYPTO_API_CRYPTONATOR_PAIRS", "externalSymbol1;SYMBOL1")
 
 	cfg := config.NewConfig(&flag.FlagSet{})
+	logger := zap.NewNop()
 	mdChannel := make(chan model.MarketData)
-	client := NewCryptonatorClient(cfg, server.Client(), mdChannel)
+	client := NewCryptonatorClient(cfg, logger, server.Client(), mdChannel)
 	go client.(*cryptonatorClient).updateMarketData()
 
 	md := <-mdChannel

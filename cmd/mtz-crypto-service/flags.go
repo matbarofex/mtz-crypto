@@ -13,6 +13,7 @@ var fs = flag.NewFlagSet("crypto", flag.ExitOnError)
 var (
 	_ = fs.Bool("crypto.debug.mode", false, "Activar modo debug")
 	_ = fs.String("crypto.http.addr", ":8000", "Puerto HTTP del servicio")
+	_ = fs.String("crypto.logging.format", "console", "Formato de log: json, console")
 	_ = fs.Duration("crypto.http.shutdown.timeout", 15*time.Second, "HTTP server graceful shutdown timeout")
 )
 

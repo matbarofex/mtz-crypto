@@ -13,10 +13,12 @@ import (
 	"github.com/matbarofex/mtz-crypto/pkg/crypto"
 	"github.com/matbarofex/mtz-crypto/pkg/model"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 type cryptonatorClient struct {
 	config      *config.Config
+	logger      *zap.Logger
 	httpClient  *http.Client
 	symbolPairs []cryptonatorSymbolPair
 	baseURL     string
@@ -43,6 +45,7 @@ type cryptonatorResponse struct {
 
 func NewCryptonatorClient(
 	config *config.Config,
+	logger *zap.Logger,
 	httpClient *http.Client,
 	mdChannel model.MdChannel,
 ) crypto.Client {
@@ -60,6 +63,7 @@ func NewCryptonatorClient(
 
 	return &cryptonatorClient{
 		config:      config,
+		logger:      logger,
 		httpClient:  httpClient,
 		baseURL:     baseURL,
 		symbolPairs: symbolPairs,
@@ -70,6 +74,7 @@ func NewCryptonatorClient(
 func (c *cryptonatorClient) Start() {
 	// Actualización inicial
 	c.updateMarketData()
+	c.logger.Info("cryptonatorClient started")
 
 	// Actualización periódica de la market data
 	interval := c.config.GetDuration("crypto.api.cryptonator.poll.interval")
@@ -90,10 +95,13 @@ func (c *cryptonatorClient) updateMarketData() {
 
 	for _, p := range c.symbolPairs {
 		go func(pair cryptonatorSymbolPair) {
-			fmt.Printf("Obteniendo MD para %s\n", pair.Symbol)
+			c.logger.Debug("requesting MD", zap.String("externalSymbol", pair.ExternalSymbol))
+
 			md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
 			if err != nil {
-				fmt.Println("Error", err)
+				c.logger.Error("error requesting MD",
+					zap.String("externalSymbol", pair.ExternalSymbol),
+					zap.Error(err))
 			}
 
 			c.mdChannel <- md
@@ -112,13 +120,21 @@ func (c *cryptonatorClient) updateMarketDataWithWorkers(workers int) {
 	for i := 0; i < workers; i++ {
 		go func(workerID int) {
 			for pair := range ch {
-				fmt.Printf("[worker %d] Obteniendo MD para %s\n", workerID, pair.Symbol)
+				c.logger.Debug("requesting MD",
+					zap.Int("worker", workerID),
+					zap.String("externalSymbol", pair.ExternalSymbol))
+
 				md, err := c.retrieveMD(pair.ExternalSymbol, pair.Symbol)
 				if err != nil {
-					fmt.Println("Error", err)
+					c.logger.Error("error requesting MD",
+						zap.String("externalSymbol", pair.ExternalSymbol),
+						zap.Error(err))
 				}
 
-				fmt.Printf("[worker %d] MD obtenida para %s - Enviando a MarketDataService: %+v\n", workerID, pair.Symbol, md)
+				c.logger.Debug("sending MD to channel",
+					zap.Int("worker", workerID),
+					zap.Any("md", md))
+
 				c.mdChannel <- md
 			}
 
