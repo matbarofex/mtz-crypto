@@ -18,7 +18,7 @@ generate-mocks:
 
 .PHONY: test
 test: build
-	go test -covermode=atomic -race -v -count=1 -coverprofile=coverage.out ./pkg/...
+	go test -v -race -count=1 -coverprofile=coverage.out ./pkg/...
 	go tool cover -func coverage.out | grep total
 
 .PHONY: lint
